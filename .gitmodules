@@ -1,0 +1,3 @@
+[submodule "PartyPatcher/external/ImageLibrary"]
+	path = PartyPatcher/external/ImageLibrary
+	url = https://github.com/KillzXGaming/ImageLibrary

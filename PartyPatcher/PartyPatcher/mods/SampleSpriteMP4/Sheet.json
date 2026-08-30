@@ -1,0 +1,56 @@
+{
+  "NumReferences": 16640,
+  "Textures": [
+    {
+      "Bpp": 16,
+      "Format": 2,
+      "Width": 256,
+      "Height": 256
+    }
+  ],
+  "Banks": [
+    {
+      "AnimFrames": [
+        {
+          "PatternIndex": 0,
+          "FrameLength": 1,
+          "ShiftX": 0,
+          "ShiftY": 0,
+          "Flip": 0,
+          "Unk": 0
+        }
+      ]
+    }
+  ],
+  "Patterns": [
+    {
+      "Layers": [
+        {
+          "Alpha": 255,
+          "Flip": 0,
+          "TextureIndex": 0,
+          "TexCoordTopLeftX": 0,
+          "TexCoordTopLeftY": 0,
+          "TexCoordWidth": 256,
+          "TexCoordHeight": 256,
+          "ShiftX": 0,
+          "ShiftY": 0,
+          "VertexTopLeftX": 0,
+          "VertexTopLeftY": 0,
+          "VertexTopRightX": 256,
+          "VertexTopRightY": 0,
+          "VertexBottomRightX": 256,
+          "VertexBottomRightY": 256,
+          "VertexBottomLeftX": 0,
+          "VertexBottomLeftY": 256
+        }
+      ],
+      "CenterX": 128,
+      "CenterY": 128,
+      "Width": 256,
+      "Height": 256,
+      "Padding": 0
+    }
+  ],
+  "FileIndex": 0
+}
