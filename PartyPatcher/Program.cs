@@ -1,4 +1,5 @@
 ﻿// See https://aka.ms/new-console-template for more information
+using AvaloniaToolbox.Core.IO;
 using PartyModManagerModBuilder;
 using PartyPatcher;
 using PartyPatcher.Formats;
@@ -27,7 +28,32 @@ foreach (var arg in args)
 
         BinFile binFile = new(arg);
         foreach (var file in binFile.Files)
-            file.Export(Path.Combine(folder, file.FileName));
+        {
+            if (file.FileName.EndsWith(".atb"))
+            {
+                try
+                {
+                    var data = file.DecompressData(file.FileData);
+                    AtbFile atb = new(data);
+
+                    string dir = Path.Combine(folder, Path.GetFileNameWithoutExtension(file.FileName));
+                    Directory.CreateDirectory(dir);
+
+                    atb.ExportJson(Path.Combine(dir, $"Sheet.json"));
+                    for (int i = 0; i < atb.Textures.Count; i++)
+                        atb.Export(atb.Textures[i], Path.Combine(dir, $"Texture{i}.png"));
+                }
+                catch
+                {
+                    file.Export(Path.Combine(folder, file.FileName));
+                }
+
+            }
+            else
+            {
+                file.Export(Path.Combine(folder, file.FileName));
+            }
+        }
     }
 }
 

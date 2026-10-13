@@ -149,6 +149,35 @@ namespace PartyPatcher.Formats
             });
         }
 
+        public void ExportJson(string path)
+        {
+            File.WriteAllText(path, ToJson());
+        }
+
+        public void Export(AtbTextureInfo tex, string path)
+        {
+            string dir = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(dir))
+                Directory.CreateDirectory(dir);
+
+            var gcnFormat = AtbTextureInfo.FormatList[tex.Format];
+
+            ImageFormatGcn format = new ImageFormatGcn(gcnFormat);
+            format.Palette = new ImageLibrary.Formats.Encoders.Gcn.GcnPalette(ImageFormatGcn.GcnPaletteFormats.RGB5A3);
+            if (tex.Format == TexFormat.C4 || tex.Format == TexFormat.C8)
+                format.Palette.Load(tex.PaletteData);
+
+            GenericTextureBase genericTexture = new()
+            {
+                Width = tex.Width,
+                Height = tex.Height,
+                MipCount = 1,
+                ImageFormat = format,
+                Data = tex.ImageData,
+            };
+            genericTexture.Export(path);
+        }
+
         public AtbTextureInfo AddTexture(Image<Rgba32> image, TexFormat imgFormat = TexFormat.C8)
         {
             var gcnFormat = AtbTextureInfo.FormatList[imgFormat];

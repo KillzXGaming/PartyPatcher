@@ -115,7 +115,8 @@ namespace PartyPatcher.Formats
                 }
                 Files[i].FileName = $"{name}{string.Format("{0:00}", i)}{comp}";
 
-                using (var fileReader = new FileReader(Files[i].FileData, true))
+                var decomp = Files[i].DecompressData(Files[i].FileData);
+                using (var fileReader = new FileReader(decomp))
                 {
                     fileReader.SetByteOrder(true);
                     string magic = fileReader.ReadString(4, Encoding.ASCII);
@@ -178,8 +179,6 @@ namespace PartyPatcher.Formats
                     this.Files[i].CompressionType = CompressionType.LZSS;
                     progress?.SetProgress(((float)i / (Files.Count - 1)) * 100,
                         $"Compressing {i} / {Files.Count}");
-
-                    Files[i].SaveFileFormat();
 
                     uint uncomp_size = (uint)Files[i].FileData.Length;
 
