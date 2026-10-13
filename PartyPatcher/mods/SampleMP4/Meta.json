@@ -18,16 +18,8 @@
         "PdtPath": "mpgcsnd.msm",
         "FilePath": "sound.wav",
         "Label": "",
-        "GroupId": 0,
-        "SoundId": 0
-      }
-    ],
-    "MusicPatches": [
-      {
-        "PdtPath": "mpgcstr.pdt",
-        "FilePath": "title_music.wav",
-        "Label": "",
-        "ReplaceID": 0
+        "GroupId": 4,
+        "SoundId": 2
       }
     ],
     "MessagesPatches": [
