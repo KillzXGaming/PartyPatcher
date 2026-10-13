@@ -101,6 +101,7 @@ Make sure ReplaceID is the # number the file was named as.
 
 Same as bin patch but you can use png directly.
 These will dump into a folder when a bin is drag/dropped where you can freely edit.
+Add image file names in "Images".
 
 ```
     "BinPatches": [
@@ -116,7 +117,7 @@ These will dump into a folder when a bin is drag/dropped where you can freely ed
     ],
 ```
 
-Or with custom sprite sheet.
+Or with custom sprite sheet, set "SpriteSheetFile".
 
 ```
     "BinPatches": [
