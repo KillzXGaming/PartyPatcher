@@ -22,6 +22,14 @@
         "SoundId": 2
       }
     ],
+    "MusicPatches": [
+      {
+        "PdtPath": "mpgcstr.pdt",
+        "FilePath": "music_title.wav",
+        "Label": "",
+        "ReplaceID": 20
+      }
+    ],
     "MessagesPatches": [
       {
         "MessageFilePath": "board_e.dat",

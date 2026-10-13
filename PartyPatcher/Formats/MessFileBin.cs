@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace PartyPatcher.Formats
 {
-    public class MessFileBin
+    public class MessFileBin : IMessFile
     {
         const uint START_POS = 4;
 
@@ -29,6 +29,20 @@ namespace PartyPatcher.Formats
             Read(new FileReader(stream), encoding, version);
         }
 
+        public void Replace(int groupIdx, int messageIdx, string message)
+        {
+            Console.WriteLine($"Bin messages are not patchable yet!");
+        }
+        public void AddMessage(int groupIdx, string message)
+        {
+            Console.WriteLine($"Bin messages are not patchable yet!");
+        }
+        public int AddGroup()
+        {
+            var idx = this.MessageFiles.Count;
+            this.MessageFiles.Add(new MessageData());
+            return idx;
+        }
 
         public static string Export(MessFileBin message)
         {

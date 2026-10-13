@@ -614,8 +614,6 @@ namespace PartyPatcher.Formats
 
                // var sdirs = grp.GetSDirs();
                 //grp.RebuildSDirs(sdirs);
-
-                Console.WriteLine($"{i} Gid {grp.Header.Gid} StackNo {grp.Header.StackNo} SubGrpId {grp.Header.SubGrpId}");
             }
 
             reader.SeekBegin(Header.MusOfs);

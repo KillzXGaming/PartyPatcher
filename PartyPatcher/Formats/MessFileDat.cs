@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace PartyPatcher.Formats
 {
-    public class MessFileDat
+    public class MessFileDat : IMessFile
     {
         public uint Version = 4;
 
@@ -27,6 +27,36 @@ namespace PartyPatcher.Formats
 
         public MessFileDat(System.IO.Stream stream, Encoding encoding, uint version = 4) {
             Read(new FileReader(stream), encoding, version);
+        }
+
+        public void Replace(int groupIdx, int messageIdx, string message)
+        {
+            string id = $"{groupIdx}_{messageIdx}";
+            if (MessageFiles[groupIdx].Entries.ContainsKey(id))
+            {
+                MessageFiles[groupIdx].Entries[id] = message;
+            }
+            else
+            {
+                // This should not happen unless user has bad group/message indices
+                Console.WriteLine($"Failed to find message {messageIdx} in group {groupIdx}!");
+            }
+        }
+        public void AddMessage(int groupIdx, string message)
+        {
+            if (MessageFiles.Count <= groupIdx)
+            {
+                Console.WriteLine($"Failed to find group {groupIdx} in mess file!");
+                return;
+            }
+            var idx = MessageFiles[groupIdx].Entries.Count;
+            MessageFiles[groupIdx].Entries.Add($"{groupIdx}_{idx}", message);
+        }
+        public int AddGroup()
+        {
+            var idx = this.MessageFiles.Count;
+            this.MessageFiles.Add(new MessageData());
+            return idx;
         }
 
         public void Save(string fileName, uint version = 4, Encoding encoding = null)

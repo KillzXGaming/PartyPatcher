@@ -153,12 +153,14 @@ namespace PartyPatcher
                 if (!File.Exists(soundWavPath))
                     continue;
 
+                Console.WriteLine($"Patching sound {soundWavPath} to {f.MsmPath}");
+
                 // Upper name with full path, no extension
-            /*    string fileName = Path.GetFileNameWithoutExtension(f.FilePath);
-                string dirName = Path.GetDirectoryName(f.FilePath).Replace("/", "_");
-                string name = f.FilePath.Replace("/", "_").Split(".").FirstOrDefault().ToUpper();
-                _headerWriter.WriteLine($"{name} = {f.SoundId},");
-                */
+                /*    string fileName = Path.GetFileNameWithoutExtension(f.FilePath);
+                    string dirName = Path.GetDirectoryName(f.FilePath).Replace("/", "_");
+                    string name = f.FilePath.Replace("/", "_").Split(".").FirstOrDefault().ToUpper();
+                    _headerWriter.WriteLine($"{name} = {f.SoundId},");
+                    */
 
                 var g = msm.Groups[f.GroupId];
                 var sdirs = g.GetSDirs();
@@ -207,8 +209,9 @@ namespace PartyPatcher
                     continue;
                 }
 
-                int id = pdt.StreamEntries.Length;
+                Console.WriteLine($"Patching music {soundWavPath} to {f.PdtPath}");
 
+                int id = pdt.StreamEntries.Length;
                 if (f.ReplaceID.HasValue && f.ReplaceID.Value < pdt.StreamEntries.Length)
                 {
                     pdt.Import(f.ReplaceID.Value, soundWavPath);
@@ -237,7 +240,7 @@ namespace PartyPatcher
 
         static void PatchMessages(List<MessageEntry> files, string gamePath, string prefix, string modPath)
         {
-            Dictionary<string, MessFileDat> messFiles = new();
+            Dictionary<string, IMessFile> messFiles = new();
 
             Dictionary<string, int> groups = new();
             foreach (var f in files)
@@ -249,28 +252,30 @@ namespace PartyPatcher
                 }
 
                 var mess = messFiles[f.MessageFilePath];
+                Console.WriteLine($"Patching message {f.Message} to {f.MessageFilePath}");
 
                 if (f.ReplaceGroupIdx != -1)
                 {
                     if (f.ReplaceMessageIdx != -1)
                     {
                         // Replace group and message
-                        mess.MessageFiles[f.ReplaceGroupIdx].Entries[$"{f.Group}_{f.ReplaceMessageIdx}"] = f.Message;
+                        mess.Replace(f.ReplaceGroupIdx, f.ReplaceMessageIdx, f.Message);
                     }
                     else
-                        // Add new message to the group
-                        mess.MessageFiles[f.ReplaceGroupIdx].Entries.Add($"{f.Group}_{mess.MessageFiles.Count}", f.Message);
+                    {
+                        mess.AddMessage(f.ReplaceGroupIdx, f.Message);
+                    }
                 }
                 else
                 {
                     // Add new group
                     if (!groups.ContainsKey(f.Group))
                     {
-                        groups.Add(f.Group, mess.MessageFiles.Count);
-                        mess.MessageFiles.Add(new MessFileDat.MessageData());
+                        var idx = mess.AddGroup();
+                        groups.Add(f.Group, idx);
                     }
                     int grpIdx = groups[f.Group];
-                    mess.MessageFiles[grpIdx].Entries.Add($"{f.Group}_{mess.MessageFiles.Count}", f.Message);
+                    mess.AddMessage(grpIdx, f.Message);
                 }
             }
 
