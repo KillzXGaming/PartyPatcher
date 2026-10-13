@@ -7,7 +7,7 @@ Paste in your game path
 
 ```json
 {
-  "GamePath": "D:\Games\Mario Party 4\files"
+  "GamePath": "D:\\Games\\Mario Party 4\\files"
 }
 ```
 
