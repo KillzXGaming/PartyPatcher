@@ -47,6 +47,7 @@ namespace PartyPatcher.Formats
             return JsonSerializer.Serialize(message, new JsonSerializerOptions()
             {
                 WriteIndented = true,
+                IncludeFields = true,
             });
         }
 
@@ -106,9 +107,11 @@ namespace PartyPatcher.Formats
                 writer.Write(new uint[messData.Entries.Count]);
                 long sectionSizePos = writer.Position;
                 writer.Write(uint.MaxValue);
+
+                var messages = messData.Entries.Values.ToList();
                 for (int i = 0; i < messData.Entries.Count; i++)
                 {
-                    var bytes = GetMessageStringBytes(messData.Entries[i]);
+                    var bytes = GetMessageStringBytes(messages[i]);
 
                     writer.WriteUint32Offset(startPos + 4 + (i * 4), startPos);
                     writer.Write((byte)0xB);
@@ -140,6 +143,8 @@ namespace PartyPatcher.Formats
 
         private MessageData ReadMessageData(byte[] data, Encoding encoding, uint version = 4)
         {
+            var groupID = MessageFiles.Count;
+
             MessageData messageData = new MessageData();
             messageData.Data = data;
             using (var reader = new FileReader(data))
@@ -160,7 +165,7 @@ namespace PartyPatcher.Formats
                     reader.SeekBegin(offset);
                     Trace.Assert(reader.ReadByte() == 0xb); //0xb at start of every string
 
-                    messageData.Entries.Add(GetMessageString(ReadString(reader), encoding));
+                    messageData.Entries.Add($"{groupID}_{i}", GetMessageString(ReadString(reader), encoding));
                 }
             }
             messageData.Data = new byte[0];
@@ -630,7 +635,7 @@ namespace PartyPatcher.Formats
 
         public class MessageData
         {
-            public List<string> Entries = new List<string>();
+            public Dictionary<string, string> Entries = new();
 
             public byte[] Data;
         }

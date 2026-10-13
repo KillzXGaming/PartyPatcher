@@ -9,11 +9,22 @@ using System.Text;
 foreach (var arg in args)
 {
     if (arg.EndsWith("board.dat") || arg.EndsWith("board_e.dat") ||
+        arg.EndsWith("messdata_eng.bin") || arg.EndsWith("messdata.bin") ||
         arg.EndsWith("mini.dat") || arg.EndsWith("mini_e.dat"))
     {
-        MessFile mess = new(arg, Encoding.UTF8, 4);
-        var json = MessFile.Export(mess);
-        File.WriteAllText(Path.GetFileName(arg) + ".json", json);
+        if (arg.EndsWith(".dat"))
+        {
+            MessFileDat dat = new(File.OpenRead(arg), Encoding.UTF8, 4);
+            var json = MessFileDat.Export(dat);
+            File.WriteAllText(Path.GetFileName(arg) + ".json", json);
+        }
+        else
+        {
+            MessFileBin bin = new(File.OpenRead(arg), Encoding.UTF8, 4);
+            var json = MessFileBin.Export(bin);
+            File.WriteAllText(Path.GetFileName(arg) + ".json", json);
+        }
+
         return;
     }
     if (arg.EndsWith("mpgcsnd.msm"))

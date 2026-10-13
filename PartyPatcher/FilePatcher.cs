@@ -255,11 +255,11 @@ namespace PartyPatcher
                     if (f.ReplaceMessageIdx != -1)
                     {
                         // Replace group and message
-                        mess.MessageFiles[f.ReplaceGroupIdx].Entries[f.ReplaceMessageIdx] = f.Message;
+                        mess.MessageFiles[f.ReplaceGroupIdx].Entries[$"{f.Group}_{f.ReplaceMessageIdx}"] = f.Message;
                     }
                     else
                         // Add new message to the group
-                        mess.MessageFiles[f.ReplaceGroupIdx].Entries.Add(f.Message);
+                        mess.MessageFiles[f.ReplaceGroupIdx].Entries.Add($"{f.Group}_{mess.MessageFiles.Count}", f.Message);
                 }
                 else
                 {
@@ -270,7 +270,7 @@ namespace PartyPatcher
                         mess.MessageFiles.Add(new MessFileDat.MessageData());
                     }
                     int grpIdx = groups[f.Group];
-                    mess.MessageFiles[grpIdx].Entries.Add(f.Message);
+                    mess.MessageFiles[grpIdx].Entries.Add($"{f.Group}_{mess.MessageFiles.Count}", f.Message);
                 }
             }
 
