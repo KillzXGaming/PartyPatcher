@@ -2,6 +2,7 @@
 using AvaloniaToolbox.Core.IO;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -115,6 +116,7 @@ namespace PartyPatcher.Formats
         public List<KeymapList> Keymaps { get; } = new();
         public List<LayerList> Layers { get; } = new();
 
+        public MsmPool() { }
         public MsmPool(string filePath)
         {
             using var reader = new FileReader(filePath);
@@ -125,6 +127,13 @@ namespace PartyPatcher.Formats
         {
             using var reader = new FileReader(stream);
             Read(reader);
+        }
+
+        public byte[] SaveBytes()
+        {
+            var mem = new MemoryStream();
+            Save(mem);
+            return mem.ToArray();
         }
 
         public void Save(Stream stream)

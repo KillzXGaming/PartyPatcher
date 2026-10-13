@@ -9,35 +9,30 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.4" />
     <PackageReference Include="VGAudio" Version="2.2.1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\external\ImageLibrary\src\ImageLibrary.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Reference Include="AvaloniaToolbox.Core">
       <HintPath>..\external\AvaloniaToolbox.Core.dll</HintPath>
     </Reference>
+    <Reference Include="ImageLibrary">
+      <HintPath>..\external\ImageLibrary.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="mods\SampleSpriteMP4\" />
-    <Folder Include="mods\SampleMessageMP4\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="mods\SampleSpriteMP4\Patch.json">
+    <None Update="mods\SampleMP4\Meta.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="mods\SampleSpriteMP4\Sheet.json">
+    <None Update="mods\SampleMP4\Sheet.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="mods\SampleSpriteMP4\Texture0.png">
+    <None Update="mods\SampleMP4\Texture0.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="mods\SampleSpriteMP4\Toad.hsf">
+    <None Update="mods\SampleMP4\Toad.hsf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

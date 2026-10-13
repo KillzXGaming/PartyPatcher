@@ -1,6 +1,7 @@
 ﻿using AvaloniaToolbox.Core.IO;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -70,9 +71,11 @@ namespace PartyPatcher.Formats
         public class ProjectEntry
         {
             internal ProjHeader Header;
-
+            // List of macro IDs used from the pool data
             public List<ushort> SoundMacroIds = new();
+            // List of IDs used for the sample data
             public List<ushort> SampleIds = new();
+
             public List<ushort> TableIds = new();
             public List<ushort> KeymapIds = new();
             public List<ushort> LayerIds = new();
@@ -86,6 +89,7 @@ namespace PartyPatcher.Formats
 
         public List<ProjectEntry> Entries { get; } = new();
 
+        public MsmProj() { }
         public MsmProj(Stream stream)
         {
             using (var reader = new FileReader(stream))
@@ -95,6 +99,13 @@ namespace PartyPatcher.Formats
         {
             using (var reader = new FileReader(filePath))
                 Read(reader);
+        }
+
+        public byte[] SaveBytes()
+        {
+            var mem = new MemoryStream();
+            Save(mem);
+            return mem.ToArray();
         }
 
         public void Save(Stream stream)

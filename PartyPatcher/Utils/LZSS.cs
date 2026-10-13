@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace PartyPatcher.Utils
 {
-    public static class LZSS
+    public static class LZSS_c
     {
         const int N = 1024;
         const int F = 66;
@@ -172,8 +172,8 @@ namespace PartyPatcher.Utils
                 {
                     code_buf[code_buf_ptr++] = (byte)match_position;
                     code_buf[code_buf_ptr++] =
-                        (byte)(match_position >> 2 & 0xC0 |
-                        match_length - (THRESHOLD + 1));
+                        (byte)(((match_position >> 2) & 0xC0) |
+                        (match_length - (THRESHOLD + 1)));
                 }
 
                 if ((mask <<= 1) == 0)
@@ -197,8 +197,8 @@ namespace PartyPatcher.Utils
                     if (s < F - 1)
                         text_buf[s + N] = (byte)c;
 
-                    s = s + 1 & N - 1;
-                    r = r + 1 & N - 1;
+                    s = (s + 1) & (N - 1);
+                    r = (r + 1) & (N - 1);
 
                     InsertNode(r);
                 }
@@ -206,8 +206,8 @@ namespace PartyPatcher.Utils
                 while (i++ < last_match_length)
                 {
                     DeleteNode(s);
-                    s = s + 1 & N - 1;
-                    r = r + 1 & N - 1;
+                    s = (s + 1) & (N - 1);
+                    r = (r + 1) & (N - 1);
 
                     if (--len > 0)
                         InsertNode(r);

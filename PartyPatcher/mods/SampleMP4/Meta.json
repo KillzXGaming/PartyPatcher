@@ -1,0 +1,46 @@
+{
+  "PatchFile": {
+    "FileName": null,
+    "BinPatches": [
+      {
+        "$type": "sprite",
+        "Images": [
+          "Texture0.png"
+        ],
+        "SpriteSheetFile": "Sheet.json",
+        "BinFile": "board.bin",
+        "Name": "New Space Sprites",
+        "ReplaceID": 28
+      }
+    ],
+    "SoundPatches": [
+      {
+        "PdtPath": "mpgcsnd.msm",
+        "FilePath": "sound.wav",
+        "Label": "",
+        "GroupId": 0,
+        "SoundId": 0
+      }
+    ],
+    "MusicPatches": [
+      {
+        "PdtPath": "mpgcstr.pdt",
+        "FilePath": "title_music.wav",
+        "Label": "",
+        "ReplaceID": 0
+      }
+    ],
+    "MessagesPatches": [
+      {
+        "MessageFilePath": "board_e.dat",
+        "Group": "Group",
+        "Message": "TEST",
+        "ReplaceGroupIdx": 1,
+        "ReplaceMessageIdx": 0
+      }
+    ]
+  },
+  "Name": "Space Texture Edit",
+  "Description": "Swaps the space textures with new sprites.",
+  "Author": "KxG"
+}

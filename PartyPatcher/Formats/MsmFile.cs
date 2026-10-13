@@ -1,6 +1,7 @@
 ﻿using AvaloniaToolbox.Core.IO;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -262,13 +263,37 @@ namespace PartyPatcher.Formats
 
             public void DumpProject(string folder)
             {
-                string name = Header.Gid.ToString("X4");
+                string name = Header.Gid.ToString("D4");
 
-                Directory.CreateDirectory(folder);
+                Directory.CreateDirectory(Path.Combine(folder, name));
+
+                var sdirs = this.GetSDirs();
+                int idx = 0;
+                foreach (var sdir in sdirs)
+                {
+                    try
+                    {
+                        sdir.Export(Path.Combine(folder, name, $"{idx.ToString("D4")}.wav"));
+                    }
+                    catch { }
+                    idx++;
+                }
+                /*
                 File.WriteAllBytes(Path.Combine(folder, $"{name}.proj"), ProjData);
                 File.WriteAllBytes(Path.Combine(folder, $"{name}.pool"), PoolData);
                 File.WriteAllBytes(Path.Combine(folder, $"{name}.sdir"), SDirData);
-                File.WriteAllBytes(Path.Combine(folder, $"{name}.samp"), SampleData);
+                File.WriteAllBytes(Path.Combine(folder, $"{name}.samp"), SampleData);*/
+            }
+
+            public void ImportProject(string folder)
+            {
+                string name = Header.Gid.ToString("X4");
+
+                Directory.CreateDirectory(folder);
+                ProjData = File.ReadAllBytes(Path.Combine(folder, $"{name}.proj"));
+                PoolData = File.ReadAllBytes(Path.Combine(folder, $"{name}.pool"));
+                SDirData = File.ReadAllBytes(Path.Combine(folder, $"{name}.sdir"));
+                SampleData = File.ReadAllBytes(Path.Combine(folder, $"{name}.samp"));
             }
 
             public List<SDIREntry> GetSDirs()
@@ -349,8 +374,6 @@ namespace PartyPatcher.Formats
             }
         }
 
-
-
         // SDIR
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct SDIR_ENTRY
@@ -397,6 +420,22 @@ namespace PartyPatcher.Formats
             public ADPCMParms ADPCMParms; 
             public byte[] Samples;
 
+            // Creates sample entry from a given wav file
+            public static SDIREntry Create(string filePath, ushort sfxId)
+            {
+                SDIREntry sdir = new()
+                {
+                    Header = new SDIR_ENTRY()
+                    {
+                        m_pitch = 60,
+                        m_sfxId = sfxId,
+                        m_sampleFormat = 0, // GCN DSP
+                    },
+                };
+                sdir.Import(filePath);
+                return sdir;
+            }
+
             public void Export(string filePath)
             {
                 WaveWriter wave = new WaveWriter();
@@ -405,6 +444,7 @@ namespace PartyPatcher.Formats
 
             public void Import(string filePath)
             {
+                // Todo detect and support raw dsp too
                 WaveReader wave = new WaveReader();
                 FromAudioFormat(wave.ReadFormat(File.OpenRead(filePath)));
             }
@@ -413,9 +453,7 @@ namespace PartyPatcher.Formats
             {
                 var format = new GcAdpcmFormat().EncodeFromPcm16(audioFormat.ToPcm16());
                 this.Header.m_loopStartSample = (uint)format.LoopStart;
-
                 this.Samples = format.Channels[0].Adpcm;
-
                 this.ADPCMParms = new ADPCMParms()
                 {
                     m_bytesPerFrame = 8, // 8 bytes per frame for DSP
@@ -439,7 +477,7 @@ namespace PartyPatcher.Formats
                 this.Header.m_sampleFormat = 0;
             }
 
-            private IAudioFormat ToAudioFormat()
+            public IAudioFormat ToAudioFormat()
             {
                 GcAdpcmChannel[] channels = new GcAdpcmChannel[1];
                 for (int i = 0; i < channels.Length; i++)
@@ -622,7 +660,7 @@ namespace PartyPatcher.Formats
         {
             Infos[0].GrpMax = (byte)this.Groups.Count;
             Infos[0].MusMax = (byte)this.MusEntries.Count;
-            Infos[0].SeMax = (ushort)this.SeEntries.Count;
+          //  Infos[0].SeMax = (ushort)this.SeEntries.Count;
             Infos[0].DummyMusSize = (uint)this.DummyData.Length;
 
             writer.SetByteOrder(true);

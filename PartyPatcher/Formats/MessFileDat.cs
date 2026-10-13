@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
@@ -12,19 +13,19 @@ using System.Threading.Tasks;
 
 namespace PartyPatcher.Formats
 {
-    public class MessFile
+    public class MessFileDat
     {
         public uint Version = 4;
 
         public List<MessageData> MessageFiles = new List<MessageData>();
 
-        public MessFile() { }
+        public MessFileDat() { }
 
-        public MessFile(string fileName, Encoding encoding, uint version = 4) {
+        public MessFileDat(string fileName, Encoding encoding, uint version = 4) {
             Read(new FileReader(fileName), encoding, version);
         }
 
-        public MessFile(System.IO.Stream stream, Encoding encoding, uint version = 4) {
+        public MessFileDat(System.IO.Stream stream, Encoding encoding, uint version = 4) {
             Read(new FileReader(stream), encoding, version);
         }
 
@@ -42,15 +43,15 @@ namespace PartyPatcher.Formats
             }
         }
 
-        public static string Export(MessFile message) {
+        public static string Export(MessFileDat message) {
             return JsonSerializer.Serialize(message, new JsonSerializerOptions()
             {
                 WriteIndented = true,
             });
         }
 
-        public static MessFile Import(string fileName) {
-            return JsonSerializer.Deserialize<MessFile>(System.IO.File.ReadAllText(fileName));
+        public static MessFileDat Import(string fileName) {
+            return JsonSerializer.Deserialize<MessFileDat>(System.IO.File.ReadAllText(fileName));
         }
 
         void Read(FileReader reader, Encoding encoding, uint version = 4)
@@ -78,6 +79,7 @@ namespace PartyPatcher.Formats
         void Write(FileWriter writer, Encoding encoding, uint version)
         {
             var files = MessageFiles.ToList();
+            files[0].Data = GenerateIndices(MessageFiles.Count);
 
             writer.SetByteOrder(true);
             writer.Write(files.Count);
@@ -118,6 +120,24 @@ namespace PartyPatcher.Formats
             }
         }
 
+        private byte[] GenerateIndices(int groupCount)
+        {
+            var mem = new MemoryStream();
+            using (var writer = new FileWriter(mem))
+            {
+                writer.SetByteOrder(true);
+                // 0 for first index, then 2 per group, 1 for last group
+                writer.Write((ushort)0);
+                for (int i = 1; i < groupCount - 1; i++)
+                {
+                    writer.Write((ushort)i);
+                    writer.Write((ushort)i);
+                }
+                writer.Write((ushort)(groupCount - 1));
+            }
+            return mem.ToArray();
+        }
+
         private MessageData ReadMessageData(byte[] data, Encoding encoding, uint version = 4)
         {
             MessageData messageData = new MessageData();
@@ -140,14 +160,14 @@ namespace PartyPatcher.Formats
                     reader.SeekBegin(offset);
                     Trace.Assert(reader.ReadByte() == 0xb); //0xb at start of every string
 
-                    messageData.Entries.Add(GetMessageString(ReadString(reader, encoding)));
+                    messageData.Entries.Add(GetMessageString(ReadString(reader), encoding));
                 }
             }
             messageData.Data = new byte[0];
             return messageData;
         }
 
-        private static byte[] ReadString(FileReader reader, Encoding encoding)
+        internal static byte[] ReadString(FileReader reader)
         {
             List<byte> values = new List<byte>();
             while (!reader.EndOfStream)
@@ -172,20 +192,50 @@ namespace PartyPatcher.Formats
             writer.Write((byte)0);
         }
 
-        static bool colorTagActive = false;
-        static bool startQuoteActive = false;
+        public enum ControlCodes
+        {
+            HUWIN_CTRL_END = 0,
+            HUWIN_CTRL_TEXT = 10,
+            HUWIN_CTRL_LINEBREAK = 11,
+            HUWIN_CTRL_TAB_STOP = 12,
+            HUWIN_CTRL_CHOICE_START = 13,
+            HUWIN_CTRL_TAB_EXPLICIT = 14,
+            HUWIN_CTRL_CHOICE = 15,
+            HUWIN_CTRL_CHAR_16 = 16,
+            HUWIN_CTRL_CHAR_27 = 27,
+            HUWIN_CTRL_PLAY_SE = 28,
+            HUWIN_CTRL_TOGGLE_OUTLINE = 29,
+            HUWIN_CTRL_SET_COLOR = 30,
+            HUWIN_CTRL_INSERT = 31,
+            HUWIN_CTRL_CHAR_32 = 32,
+            HUWIN_CTRL_WAIT_KEY = 255
+        };
 
-        static string GetMessageString(byte[] values)
+        internal static string GetMessageString(byte[] values, Encoding encoding)
         {
             List<char> text = new List<char>();
+            List<byte> messageText = new();
+
+            void FlushChars()
+            {
+                string message = encoding.GetString(messageText.ToArray());
+                messageText.Clear();
+
+                text.AddRange(message.ToCharArray());
+            }
+
             for (int i = 0; i < values.Length; i++)
             {
                 var val = values[i];
 
                 if (CharacterTable.ContainsKey(val))
-                    text.Add(CharacterTable[val]);
-                else if (val == 0x0C)
                 {
+                    FlushChars();
+                    text.Add(CharacterTable[val]);
+                }
+                else if (val == (int)ControlCodes.HUWIN_CTRL_TAB_STOP)
+                {
+                    FlushChars();
                     int count = 1;
                     while (values[i + 1] == 0x0C)
                     {
@@ -194,15 +244,25 @@ namespace PartyPatcher.Formats
                     }
                     text.AddRange($"[Align_{count}]");
                 }
-                else if (val == 0x0D) text.AddRange("[Select2]");
-                else if (val == 0x0F) text.AddRange("[Select]");
+                else if (val == 0x0D)
+                {
+                    FlushChars();
+                    text.AddRange("[Select2]");
+                }
+                else if (val == 0x0F)
+                {
+                    FlushChars();
+                    text.AddRange("[Select]");
+                }
                 else if (val == 0x1C)
                 {
+                    FlushChars();
                     text.AddRange($"[Voice:{(DialogCodes)values[i + 1]}]");
                     i++;
                 }
                 else if (val == 0x1E)
                 {
+                    FlushChars();
                     //End of color tag
                     if (values[i + 1] == (byte)ColorCodes.END)
                         text.AddRange($"[COLOR_END]");
@@ -213,25 +273,29 @@ namespace PartyPatcher.Formats
                 }
                 else if (val == 0x1F)
                 {
+                    FlushChars();
                     text.AddRange($"[INSERT:{(RuntimeCodes)values[i + 1]}]");
                     i++;
                 }
                 else if (val == 0x0E)
                 {
+                    FlushChars();
                     text.AddRange($"[ICON:{(IconCodes)values[i + 1]}]");
                     i++;
                 }
                 else if (val == 0xFF)
                 {
+                    FlushChars();
                     text.AddRange($"[WAIT]");
                 }
                 else
-                    text.Add((char)val);
+                    messageText.Add(val);
             }
+            FlushChars();
             return new string(text.ToArray());
         }
 
-        static byte[] GetMessageStringBytes(string text)
+        public static byte[] GetMessageStringBytes(string text)
         {
             List<byte> values = new List<byte>();
             int i = 0;
@@ -355,67 +419,9 @@ namespace PartyPatcher.Formats
             return values.ToArray();
         }
 
-        private static List<byte> TryParseSpecial(string text, ref int i, string type, Type enumType)
-        {
-            List<byte> values = new List<byte>();
-
-            int sizeCheck = type.Length + 2; //Include : and [
-            if (type == "COLOR")
-                sizeCheck = type.Length + 3;
-
-            if (text.Length > i + sizeCheck && text.Substring(i + 1, type.Length) == type)
-            {
-                //Go from the start of the tag and split at the end to get our value
-                var valeText = text.Remove(0, i + sizeCheck).Split(']').FirstOrDefault();
-                if (type == "COLOR")
-                     valeText = text.Remove(0, i + sizeCheck).Split(')').FirstOrDefault();
-
-                var valueCode = (byte)Enum.Parse(enumType, valeText);
-
-                if (type == "Dialog")
-                    values.Add(0x1C);
-                if (type == "COLOR")
-                    values.Add(0x1E);
-                if (type == "INSERT")
-                    values.Add(0x1F);
-                if (type == "ICON")
-                    values.Add(0x0E);
-
-                if (type == "COLOR")
-                    colorTagActive = true;
-
-                values.Add(valueCode);
-
-                i += (sizeCheck + valeText.Length);
-                if (type != "COLOR")
-                    i++;
-            }
-            else if (text.Length > i + 8 && text.Substring(i + 1, 7) == "Select2")
-            {
-                values.Add(0x0D);
-                i += 8;
-            }
-            else if (text.Length > i + 7 && text.Substring(i + 1, 6) == "Select")
-            {
-                values.Add(0x0F);
-                i += 7;
-            }
-            else if (text.Length > i + 9 && text.Substring(i + 1, 5) == "Align")
-            {
-                var numValues = int.Parse(text.Substring(i + 7, 1));
-                byte[] valueCodes = new byte[numValues];
-                for (int v = 0; v < numValues; v++)
-                    valueCodes[v] = 0x0C;
-
-                values.AddRange(valueCodes);
-                i += 8;
-            }
-
-            return values;
-        }
-
         static Dictionary<byte, char> CharacterTable = new Dictionary<byte, char>()
         {
+            { 0x1, ' ' },
             { 0x0A, '\n' },
             { 0x3D, '-' },
 
@@ -450,6 +456,11 @@ namespace PartyPatcher.Formats
 
 
             */
+        };
+
+        static Dictionary<int, Type> DialogCodesPerVersion = new()
+        {
+            { 4, typeof(DialogCodes) },
         };
 
         enum RuntimeCodes : byte
@@ -510,6 +521,50 @@ namespace PartyPatcher.Formats
             GREEN = 0x05,
             YELLOW = 0x07,
             END = 0x08,
+        }
+
+        enum ColorCodesMP5 : byte
+        {
+            BLACK = 0,
+            BLUE = 1,
+            RED = 2,
+            MAGENTA = 3,
+            GREEN = 4,
+            CYAN = 5,
+            ORANGE = 6,
+            WHITE = 7,
+            DARKGRAY = 8,
+            LIGHTGRAY = 9,
+            MAX = 10,
+        }
+
+        enum DialogCodesMP5 : byte
+        {
+            HUWIN_SPEAKER_CHORL = 0,
+            HUWIN_SPEAKER_NERL = 1,
+            HUWIN_SPEAKER_TERL = 2,
+            HUWIN_SPEAKER_NIRL = 3,
+            HUWIN_SPEAKER_HARL = 4,
+            HUWIN_SPEAKER_MARL = 5,
+            HUWIN_SPEAKER_DARL = 6,
+            HUWIN_SPEAKER_KOOPA = 7,
+            HUWIN_SPEAKER_KURIBO = 8,
+            HUWIN_SPEAKER_HEYHO = 9,
+            HUWIN_SPEAKER_NOKO2 = 10,
+            HUWIN_SPEAKER_JUGEM = 11,
+            HUWIN_SPEAKER_WAN2 = 12,
+            HUWIN_SPEAKER_UKKI = 13,
+            HUWIN_SPEAKER_PATA2 = 14,
+            HUWIN_SPEAKER_HANACHAN = 15,
+            HUWIN_SPEAKER_HANACHAN2 = 16,
+            HUWIN_SPEAKER_KAMEKKU = 17,
+            HUWIN_SPEAKER_KOKAMEKKU = 18,
+            HUWIN_SPEAKER_CHORO = 19,
+            HUWIN_SPEAKER_CAPMACHINE = 20,
+            HUWIN_SPEAKER_PUKU2 = 21,
+            HUWIN_SPEAKER_BATTAN = 22,
+            HUWIN_SPEAKER_DOSSUN = 23,
+            HUWIN_SPEAKER_NONE = 255,
         }
 
         public enum FileListMP4

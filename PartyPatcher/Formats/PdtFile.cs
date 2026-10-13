@@ -145,7 +145,7 @@ namespace PartyPatcher.Formats
             slot.Info.loopOfsEnd = (uint)(slot.Channels.Sum(x => x.Adpcm.Length));
         }
 
-        private IAudioFormat ToAudioFormat(int streamIdx)
+        public IAudioFormat ToAudioFormat(int streamIdx)
         {
             var slot = StreamEntries[streamIdx];
 
